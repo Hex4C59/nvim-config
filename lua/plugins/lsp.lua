@@ -1,6 +1,12 @@
 return {
   {
     "williamboman/mason.nvim",
+    cmd = {
+      "Mason",
+      "MasonInstall",
+      "MasonUninstall",
+      "MasonUpdate",
+    },
     build = ":MasonUpdate",
     config = true,
   },
@@ -11,10 +17,39 @@ return {
       ensure_installed = {
         "clangd",
         "gopls",
+        "lua_ls",
         "pyright",
+        "ruff",
         "rust_analyzer",
       },
       automatic_installation = true,
+    },
+  },
+  {
+    "WhoIsSethDaniel/mason-tool-installer.nvim",
+    cmd = {
+      "MasonToolsInstall",
+      "MasonToolsInstallSync",
+      "MasonToolsUpdate",
+      "MasonToolsUpdateSync",
+      "MasonToolsClean",
+    },
+    event = "VeryLazy",
+    dependencies = { "williamboman/mason.nvim" },
+    opts = {
+      ensure_installed = {
+        "clang-format",
+        "gofumpt",
+        "goimports",
+        "golangci-lint",
+        "luacheck",
+        "ruff",
+        "stylua",
+      },
+      auto_update = false,
+      run_on_start = true,
+      start_delay = 3000,
+      debounce_hours = 12,
     },
   },
   {
@@ -40,10 +75,18 @@ return {
           vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
           vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
           vim.keymap.set("n", "<leader>ws", vim.lsp.buf.workspace_symbol, opts)
+
+          local client = vim.lsp.get_client_by_id(ev.data.client_id)
+          if client and client.name == "ruff" then
+            client.server_capabilities.hoverProvider = false
+          end
         end,
       })
 
-      vim.lsp.config("clangd", { capabilities = capabilities })
+      vim.lsp.config("clangd", {
+        capabilities = capabilities,
+        cmd = { "clangd", "--clang-tidy", "--background-index" },
+      })
       vim.lsp.enable("clangd")
 
       vim.lsp.config("gopls", {
@@ -60,6 +103,21 @@ return {
       })
       vim.lsp.enable("gopls")
 
+      vim.lsp.config("lua_ls", {
+        capabilities = capabilities,
+        settings = {
+          Lua = {
+            diagnostics = {
+              globals = { "vim" },
+            },
+            workspace = {
+              checkThirdParty = false,
+            },
+          },
+        },
+      })
+      vim.lsp.enable("lua_ls")
+
       vim.lsp.config("pyright", {
         capabilities = capabilities,
         settings = {
@@ -73,11 +131,15 @@ return {
       })
       vim.lsp.enable("pyright")
 
+      vim.lsp.config("ruff", { capabilities = capabilities })
+      vim.lsp.enable("ruff")
+
       vim.lsp.config("rust_analyzer", {
         capabilities = capabilities,
         settings = {
           ["rust-analyzer"] = {
-            checkOnSave = {
+            checkOnSave = true,
+            check = {
               command = "clippy",
             },
             cargo = {

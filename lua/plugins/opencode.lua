@@ -51,7 +51,7 @@ return {
     vim.api.nvim_create_autocmd("TermOpen", {
       pattern = "term://*opencode*",
       callback = function(event)
-        vim.keymap.set("t", "<leader>g", [[<C-\><C-n>]], {
+        vim.keymap.set("t", "jk", [[<C-\><C-n>]], {
           buffer = event.buf,
           desc = "退出 opencode 终端模式",
         })
