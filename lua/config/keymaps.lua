@@ -11,6 +11,39 @@ vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<CR>")
 -- 快速退出插入模式
 vim.keymap.set("i", "jk", "<Esc>", { desc = "退出插入模式" })
 
+local function open_terminal()
+  if vim.bo.buftype == "" and vim.bo.modifiable and not vim.bo.readonly and vim.api.nvim_buf_get_name(0) ~= "" then
+    vim.cmd("write")
+  end
+  vim.cmd("botright split")
+  vim.cmd("resize 12")
+  vim.cmd("terminal")
+  vim.b.user_terminal = true
+  vim.keymap.set("t", "jk", [[<C-\><C-n>]], {
+    buffer = true,
+    desc = "退出终端模式",
+  })
+  vim.cmd("startinsert")
+end
+
+local function close_terminal()
+  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+    local buf = vim.api.nvim_win_get_buf(win)
+    if vim.bo[buf].buftype == "terminal" and vim.b[buf].user_terminal then
+      vim.api.nvim_win_close(win, true)
+      return
+    end
+  end
+
+  vim.notify("没有由 <leader>t 打开的终端窗口", vim.log.levels.WARN)
+end
+
+vim.api.nvim_create_user_command("OpenTerminal", open_terminal, { desc = "打开终端" })
+vim.api.nvim_create_user_command("CloseTerminal", close_terminal, { desc = "关闭终端" })
+
+vim.keymap.set("n", "<leader>t", open_terminal, { desc = "打开终端" })
+vim.keymap.set("n", "<leader>T", close_terminal, { desc = "关闭终端" })
+
 vim.api.nvim_create_user_command("Qacheck", function()
   for _, buf in ipairs(vim.api.nvim_list_bufs()) do
     if vim.api.nvim_buf_is_loaded(buf) then
